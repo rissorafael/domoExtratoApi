@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest  # ou outra versão
+    container_name: sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourPassword123  # Alterar para uma senha forte
+      - MSSQL_PID=Express  # Pode usar 'Developer' para a versão completa ou 'Express' para a versão gratuita
+    ports:
+      - "1433:1433"  # Expor a porta do SQL Server
+    volumes:
+      - sqlserver_data:/var/opt/mssql  # Persistir dados entre reinicializações do container
+    networks:
+      - sql_network
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
+    container_name: domoextratoapi.elasticsearch
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ports:
+      - "9200:9200"  # Expor a porta do Elasticsearch
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.7.1
+    container_name: domoextratoapi.kibana
+    depends_on:
+      - elasticsearch
+    environment:
+      - 'ELASTICSEARCH_URL=http://domoextratoapi.elasticsearch:9200'  # Conectar ao Elasticsearch dentro da rede do Docker
+    ports:
+      - "5601:5601"  # Expor a porta do Kibana
+    networks:
+      - elastic
+
+volumes:
+  sqlserver_data:
+  elasticsearch-data:
+
+networks:
+  sql_network:
+    driver: bridge
+  elastic:
+    driver: bridge
